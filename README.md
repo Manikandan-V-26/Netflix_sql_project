@@ -149,7 +149,7 @@ LIMIT 5;
 
 ```sql
 SELECT * 
-FROM netflix
+FROM netflix_titles
 WHERE listed_in LIKE '%Documentaries';
 ```
 
@@ -159,7 +159,7 @@ WHERE listed_in LIKE '%Documentaries';
 
 ```sql
 SELECT * 
-FROM netflix
+FROM netflix_titles
 WHERE director IS NULL;
 ```
 
@@ -169,7 +169,7 @@ WHERE director IS NULL;
 
 ```sql
 SELECT * 
-FROM netflix
+FROM netflix_titles
 WHERE casts LIKE '%Salman Khan%'
   AND release_year > EXTRACT(YEAR FROM CURRENT_DATE) - 10;
 ```
