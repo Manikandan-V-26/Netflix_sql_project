@@ -21,7 +21,7 @@ The data for this project is sourced from the Kaggle dataset:
 
 ```sql
 DROP TABLE IF EXISTS netflix;
-CREATE TABLE netflix
+CREATE TABLE  netflix_titles
 (
     show_id      VARCHAR(5),
     type         VARCHAR(10),
@@ -40,155 +40,110 @@ CREATE TABLE netflix
 
 ## Business Problems and Solutions
 
-### 1. Count the Number of Movies vs TV Shows
+### 1.How many total records are there in the dataset?
 
 ```sql
-SELECT 
-    type,
-    COUNT(*)
-FROM netflix
-GROUP BY 1;
+SELECT
+COUNT(*) FROM netflix_titles;
 ```
 
-**Objective:** Determine the distribution of content types on Netflix.
+**Objective:** To determine the total number of records in the dataset, giving an idea of the dataset’s size.
 
-### 2. Find the Most Common Rating for Movies and TV Shows
-
-```sql
-WITH RatingCounts AS (
-    SELECT 
-        type,
-        rating,
-        COUNT(*) AS rating_count
-    FROM netflix
-    GROUP BY type, rating
-),
-RankedRatings AS (
-    SELECT 
-        type,
-        rating,
-        rating_count,
-        RANK() OVER (PARTITION BY type ORDER BY rating_count DESC) AS rank
-    FROM RatingCounts
-)
-SELECT 
-    type,
-    rating AS most_frequent_rating
-FROM RankedRatings
-WHERE rank = 1;
-```
-
-**Objective:** Identify the most frequently occurring rating for each type of content.
-
-### 3. List All Movies Released in a Specific Year (e.g., 2020)
+### 2.  Find all movies released in 2020.
 
 ```sql
 SELECT * 
-FROM netflix
-WHERE release_year = 2020;
+	FROM netflix_titles 
+	WHERE release_year = 2020 AND type = 'Movie';
 ```
 
-**Objective:** Retrieve all movies released in a specific year.
+**Objective:** To extract all movies that were specifically released in the year 2020
 
-### 4. Find the Top 5 Countries with the Most Content on Netflix
+### 3. List all TV shows directed by 'David Attenborough'.
 
 ```sql
 SELECT * 
-FROM
-(
-    SELECT 
-        UNNEST(STRING_TO_ARRAY(country, ',')) AS country,
-        COUNT(*) AS total_content
-    FROM netflix
-    GROUP BY 1
-) AS t1
-WHERE country IS NOT NULL
-ORDER BY total_content DESC
-LIMIT 5;
+	FROM netflix_titles 
+	WHERE director = 'David Attenborough' AND type = 'TV Show';
 ```
 
-**Objective:** Identify the top 5 countries with the highest number of content items.
+**Objective:** To filter TV Shows directed by a specific person, in this case, David Attenborough.
 
-### 5. Identify the Longest Movie
+### 4.  Count the number of movies vs TV shows.
 
 ```sql
-SELECT 
-    *
-FROM netflix
-WHERE type = 'Movie'
-ORDER BY SPLIT_PART(duration, ' ', 1)::INT DESC;
+SELECT type, COUNT(*) 
+	FROM netflix_titles 
+	GROUP BY type;
 ```
 
-**Objective:** Find the movie with the longest duration.
+**Objective:** To compare how many Movies vs TV Shows are available in the dataset.
 
-### 6. Find Content Added in the Last 5 Years
+### 5. Get the latest 10 movies added to Netflix.
 
 ```sql
+
 SELECT *
-FROM netflix
-WHERE TO_DATE(date_added, 'Month DD, YYYY') >= CURRENT_DATE - INTERVAL '5 years';
+	FROM netflix_titles 
+	WHERE type = 'Movie'  
+        ORDER BY date_added DESC LIMIT 10;
 ```
 
-**Objective:** Retrieve content added to Netflix in the last 5 years.
+**Objective:** To retrieve the most recently added movies to Netflix.
 
-### 7. Find All Movies/TV Shows by Director 'Rajiv Chilaka'
+### 6. Find all titles containing the word ‘Love’.
 
 ```sql
-SELECT *
-FROM (
-    SELECT 
-        *,
-        UNNEST(STRING_TO_ARRAY(director, ',')) AS director_name
-    FROM netflix
-) AS t
-WHERE director_name = 'Rajiv Chilaka';
+SELECT * 
+	FROM netflix_titles 
+	WHERE title LIKE '%Love%';
 ```
 
-**Objective:** List all content directed by 'Rajiv Chilaka'.
+**Objective:** To find all movies and TV shows with "Love" in the title, useful for keyword-based searches.
 
-### 8. List All TV Shows with More Than 5 Seasons
+### 7. Find all TV Shows available in India.
 
 ```sql
-SELECT *
-FROM netflix
-WHERE type = 'TV Show'
-  AND SPLIT_PART(duration, ' ', 1)::INT > 5;
+SELECT title, country
+FROM netflix_titles
+WHERE type = 'TV Show' AND country = 'India';
 ```
 
-**Objective:** Identify TV shows with more than 5 seasons.
+**Objective:** To list all TV Shows available in India, helping in region-specific content analysis and recommendations.
 
-### 9. Count the Number of Content Items in Each Genre
+### 8.  Find movies that are exactly 90 minutes long.
 
 ```sql
-SELECT 
-    UNNEST(STRING_TO_ARRAY(listed_in, ',')) AS genre,
-    COUNT(*) AS total_content
-FROM netflix
-GROUP BY 1;
+SELECT title, duration
+FROM netflix_titles
+WHERE type = 'Movie' AND duration = '90 min';
 ```
 
-**Objective:** Count the number of content items in each genre.
+**Objective:** To identify movies with a duration of exactly 90 minutes, useful for quick watch recommendations and content filtering.
 
-### 10.Find each year and the average numbers of content release in India on netflix. 
-return top 5 year with highest avg content release!
+### 9.What are the different genres available on Netflix?
 
 ```sql
-SELECT 
-    country,
-    release_year,
-    COUNT(show_id) AS total_release,
-    ROUND(
-        COUNT(show_id)::numeric /
-        (SELECT COUNT(show_id) FROM netflix WHERE country = 'India')::numeric * 100, 2
-    ) AS avg_release
-FROM netflix
-WHERE country = 'India'
-GROUP BY country, release_year
-ORDER BY avg_release DESC
-LIMIT 5;
+SELECT DISTINCT listed_in
+FROM netflix_titles;
 ```
 
-**Objective:** Calculate and rank years by the average number of content releases by India.
+**Objective:** To retrieve all unique genres available on Netflix, helping in content classification and analysis.
+
+### 10.Which countries produce the most movies?
+
+```sql
+SELECT country, COUNT(*) AS movie_count  
+FROM netflix_titles  
+WHERE type = 'Movie'  
+AND country IS NOT NULL  
+GROUP BY country  
+ORDER BY movie_count DESC  
+LIMIT 5;
+```
+
+**Objective:** This query lists the top 5 countries that have produced the most movies.
+
 
 ### 11. List All Movies that are Documentaries
 
